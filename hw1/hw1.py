@@ -2,6 +2,15 @@ import sys
 import pandas as pd
 import numpy as np
 
+attrs = ['AMB', 'CH4', 'CO', 'NMHC', 'NO', 'NO2',
+        'NOx', 'O3', 'PM10', 'PM2.5', 'RAINFALL', 'RH',
+        'SO2', 'THC', 'WD_HR', 'WIND_DIR', 'WIND_SPEED', 'WS_HR']
+
+attr_range = {}
+
+for i, attr in enumerate(attrs):
+    attr_range[attr] = list(range(9*i, 9*i+9))
+
 def ReadTrainData(filename):
     raw_data = pd.read_csv(filename, encoding='big5').as_matrix()
     data = raw_data[:, 3:] # 12 months, 20 days per month, 18 features per day. shape: (4320 , 24)
@@ -93,11 +102,24 @@ class Linear_Regression():
 
 def main(args):
     X, Y = ReadTrainData(args[1])
+    X_test = ReadTestData(args[2])
+
+    select_attr = ['PM10', 'PM2.5', 'WIND_SPEED']
+    select_range = []
+    for attr in select_attr:
+        select_range += attr_range[attr]
+
+    print(select_range)
+    X = X[:, select_range]
+    X_test = X_test[:, select_range]
+
+    # for i in range(90, 99):
+    #    X[:, i] = np.square(X[:, i])
+    #    X_test[:, i] = np.square(X_test[:, i])
 
     model = Linear_Regression()
-    model.fit(X, Y, max_epoch=100000, lr=10)
+    model.fit(X, Y, max_epoch=100000, lr=100)
 
-    X_test = ReadTestData(args[2])
     predict = model.predict_test(X_test)
 
     with open(args[3], 'w') as f:
