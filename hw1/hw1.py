@@ -49,11 +49,11 @@ class Linear_Regression():
         return Y - self.predict(X)
 
     def _loss(self, X, Y):
-        return np.sqrt(np.mean(np.square(self._error(X, Y))))
+        return np.sqrt(np.mean(self._error(X, Y) ** 2))
 
     def _init_parameters(self):
-        self.B = np.random.rand() - 0.5
-        self.W = np.random.rand(self.feature_dim, 1) - 0.5
+        self.B = 2.0 * np.random.rand() - 1.0
+        self.W = 2.0 * np.random.rand(self.feature_dim, 1) - 1.0
 
     def _scale(self, X, istrain=True):
         if istrain:
@@ -70,29 +70,24 @@ class Linear_Regression():
 
         self._init_parameters()
 
-        B_lr = 1e-20
-        W_lr = np.full((feature_dim, 1), 1e-20)
+        B_lr = 0.0
+        W_lr = np.zeros((feature_dim, 1))
         for epoch in range(1, max_epoch+1):
-
-            B_grad = np.random.rand() - 0.5
-            W_grad = np.random.rand(feature_dim, 1) - 0.5
-
             error = self._error(X, Y)
+            B_grad = -np.sum(error) * 1.0 / N
+            W_grad = -np.dot(X.T, error) / N
 
-            B_grad = B_grad - 2.0 * np.sum(error) * 1.0
-            W_grad = W_grad - 2.0 * np.dot(X.T, error)
+            B_lr += B_grad ** 2
+            W_lr += W_grad ** 2
 
-            B_lr = B_lr + B_grad ** 2
-            W_lr = W_lr + W_grad ** 2
+            self.B -= lr / np.sqrt(B_lr) * B_grad
+            self.W -= lr / np.sqrt(W_lr) * W_grad
 
-            self.B = self.B - lr / np.sqrt(B_lr) * B_grad
-            self.W = self.W - lr / np.sqrt(W_lr) * W_grad
-
-            if epoch % 100 == 0:
+            if epoch % 1000 == 0:
                 print('[Epoch {}]: loss: {}'.format(epoch, self._loss(X, Y)))
 
     def predict(self, X):
-        _X = X.reshape((-1, self.feature_dim))
+        _X = np.reshape(X, (-1, self.feature_dim))
         return np.dot(_X, self.W) + self.B
  
     def predict_test(self, X):
@@ -104,24 +99,30 @@ def main(args):
     X, Y = ReadTrainData(args[1])
     X_test = ReadTestData(args[2])
 
-    select_attr = ['PM10', 'PM2.5', 'WIND_SPEED']
+    square_attr = []
+    square_range = []
+    for attr in square_attr:
+        square_range += attr_range[attr]
+    X[:, square_range] = np.square(X[:, square_range]) 
+    X_test[:, square_range] = np.square(X_test[:, square_range]) 
+
+    # select_attr = ['PM10', 'PM2.5', 'WIND_SPEED', 'WIND_DIR', 'RAINFALL']
+    select_attr = attrs
     select_range = []
     for attr in select_attr:
         select_range += attr_range[attr]
 
-    print(select_range)
     X = X[:, select_range]
     X_test = X_test[:, select_range]
 
-    # for i in range(90, 99):
-    #    X[:, i] = np.square(X[:, i])
-    #    X_test[:, i] = np.square(X_test[:, i])
+    #s = (X.std(axis=0) > 0.5*0.5)
+    #X = X[:, s]
+    #X_test = X_test[:, s]
 
     model = Linear_Regression()
-    model.fit(X, Y, max_epoch=100000, lr=100)
+    model.fit(X, Y, max_epoch=20000, lr=1)
 
     predict = model.predict_test(X_test)
-
     with open(args[3], 'w') as f:
         print('id,value', file=f)
         for (i, p) in enumerate(predict) :
