@@ -61,12 +61,15 @@ class Linear_Regression():
             self.min = np.min(X, axis=0)
         return (X - self.min) / (self.max - self.min)
 
-    def fit(self, _X, Y, max_epoch=100000, lr=0.1):
+    def fit(self, _X, Y, valid, max_epoch=100000, lr=0.1):
         assert _X.shape[0] == Y.shape[0]
         N = _X.shape[0]
         self.feature_dim = feature_dim = _X.shape[1]
 
         X = self._scale(_X)
+        if valid is not None:
+            X_valid, Y_valid = valid
+            X_valid = self._scale(X_valid, istrain=False)
 
         self._init_parameters()
 
@@ -85,6 +88,8 @@ class Linear_Regression():
 
             if epoch % 1000 == 0:
                 print('[Epoch {}]: loss: {}'.format(epoch, self._loss(X, Y)))
+                if valid is not None:
+                    print('valid loss: {}'.format(self._loss(X_valid, Y_valid)))
 
     def predict(self, X):
         _X = np.reshape(X, (-1, self.feature_dim))
@@ -106,7 +111,8 @@ def main(args):
     X[:, square_range] = np.square(X[:, square_range]) 
     X_test[:, square_range] = np.square(X_test[:, square_range]) 
 
-    select_attr = ['PM10', 'PM2.5', 'WIND_SPEED', 'WIND_DIR', 'RAINFALL']
+    select_attr = attrs
+    # select_attr = ['PM10', 'PM2.5', 'WIND_SPEED', 'WIND_DIR', 'RAINFALL']
     select_range = []
     for attr in select_attr:
         select_range += attr_range[attr]
@@ -121,8 +127,16 @@ def main(args):
     #X = X[:, s]
     #X_test = X_test[:, s]
 
+    valid = None
+    if len(args) >= 5:
+        order = np.random.permutation(X.shape[0])
+        X, Y = X[order], Y[order]
+        valid = X[-240:], Y[-240:]
+        X, Y = X[:-240], Y[:-240]
+        print()
+
     model = Linear_Regression()
-    model.fit(X, Y, max_epoch=200000, lr=1)
+    model.fit(X, Y, valid=valid, max_epoch=200000, lr=0.5)
 
     predict = model.predict_test(X_test)
     with open(args[3], 'w') as f:
