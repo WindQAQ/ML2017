@@ -22,9 +22,9 @@ def ReadTrainData(filename):
         # i: start of each month
         days = np.vsplit(data[i:i+18*20], 20) # shape: 20 * (18, 24)
         concat = np.concatenate(days, axis=1) # shape: (18, 480)
-        for j in range(0, concat.shape[1]-10):
+        for j in range(0, concat.shape[1]-9):
             X.append(concat[:, j:j+9].flatten())
-            Y.append([concat[9, j+10]])
+            Y.append([concat[9, j+9]])
 
     return np.array(X), np.array(Y)
 
@@ -106,8 +106,7 @@ def main(args):
     X[:, square_range] = np.square(X[:, square_range]) 
     X_test[:, square_range] = np.square(X_test[:, square_range]) 
 
-    # select_attr = ['PM10', 'PM2.5', 'WIND_SPEED', 'WIND_DIR', 'RAINFALL']
-    select_attr = attrs
+    select_attr = ['PM10', 'PM2.5', 'WIND_SPEED', 'WIND_DIR', 'RAINFALL']
     select_range = []
     for attr in select_attr:
         select_range += attr_range[attr]
@@ -115,12 +114,15 @@ def main(args):
     X = X[:, select_range]
     X_test = X_test[:, select_range]
 
+    X = np.concatenate((X, X ** 2), axis=1)
+    X_test = np.concatenate((X_test, X_test ** 2), axis=1)
+
     #s = (X.std(axis=0) > 0.5*0.5)
     #X = X[:, s]
     #X_test = X_test[:, s]
 
     model = Linear_Regression()
-    model.fit(X, Y, max_epoch=20000, lr=1)
+    model.fit(X, Y, max_epoch=200000, lr=1)
 
     predict = model.predict_test(X_test)
     with open(args[3], 'w') as f:
