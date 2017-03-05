@@ -104,15 +104,8 @@ def main(args):
     X, Y = ReadTrainData(args[1])
     X_test = ReadTestData(args[2])
 
-    square_attr = []
-    square_range = []
-    for attr in square_attr:
-        square_range += attr_range[attr]
-    X[:, square_range] = np.square(X[:, square_range]) 
-    X_test[:, square_range] = np.square(X_test[:, square_range]) 
-
     select_attr = attrs
-    # select_attr = ['PM10', 'PM2.5', 'WIND_SPEED', 'WIND_DIR', 'RAINFALL']
+    select_attr = ['PM10', 'PM2.5', 'WIND_SPEED', 'WIND_DIR', 'RAINFALL']
     select_range = []
     for attr in select_attr:
         select_range += attr_range[attr]
@@ -123,17 +116,13 @@ def main(args):
     X = np.concatenate((X, X ** 2), axis=1)
     X_test = np.concatenate((X_test, X_test ** 2), axis=1)
 
-    #s = (X.std(axis=0) > 0.5*0.5)
-    #X = X[:, s]
-    #X_test = X_test[:, s]
-
     valid = None
     if len(args) >= 5:
+        valid_num = int(args[4])
         order = np.random.permutation(X.shape[0])
         X, Y = X[order], Y[order]
-        valid = X[-240:], Y[-240:]
-        X, Y = X[:-240], Y[:-240]
-        print()
+        valid = X[-valid_num:], Y[-valid_num:]
+        X, Y = X[:-valid_num], Y[:-valid_num]
 
     model = Linear_Regression()
     model.fit(X, Y, valid=valid, max_epoch=200000, lr=0.5)
