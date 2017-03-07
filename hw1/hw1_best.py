@@ -18,15 +18,6 @@ def ReadTrainData(filename):
     data[data == 'NR'] = 0.0
     data = data.astype('float')
 
-    # classify wind direction
-    for i in range(14, data.shape[0], 18):
-        for j in range(0, data.shape[1]):
-            data[i, j] = math.sin(data[i, j] / (2*math.pi))
-
-    for i in range(15, data.shape[0], 18):
-        for j in range(0, data.shape[1]):
-            data[i, j] = math.sin(data[i, j] / (2*math.pi))
-
     X, Y = [], []
     for i in range(0, data.shape[0], 18*20):
         # i: start of each month
@@ -43,15 +34,6 @@ def ReadTestData(filename):
     data = raw_data[:, 2:]
     data[data == 'NR'] = 0.0
     data = data.astype('float')
-
-    # classify wind direction
-    for i in range(14, data.shape[0], 18):
-        for j in range(0, data.shape[1]):
-            data[i, j] = math.sin(data[i, j] / (2*math.pi))
-
-    for i in range(15, data.shape[0], 18):
-        for j in range(0, data.shape[1]):
-            data[i, j] = math.sin(data[i, j] / (2*math.pi))
 
     obs = np.vsplit(data, data.shape[0]/18)
     X = []
@@ -112,7 +94,7 @@ def main(args):
     X_test = ReadTestData(args[2])
 
     select_attr = attrs
-    select_attr = ['PM10', 'PM2.5', 'WIND_DIR', 'WIND_SPEED', 'WS_HR', 'RAINFALL']
+    select_attr = ['PM10', 'PM2.5', 'O3', 'WIND_DIR', 'WIND_SPEED', 'WD_HR', 'WS_HR', 'RAINFALL']
     select_range = []
     for attr in select_attr:
         select_range += attr_range[attr]
@@ -120,16 +102,16 @@ def main(args):
     X = X[:, select_range]
     X_test = X_test[:, select_range]
 
-    X = np.concatenate((X, X ** 2), axis=1)
-    X_test = np.concatenate((X_test, X_test ** 2), axis=1)
+    X = np.concatenate((X, X[:, 0:18] ** 2), axis=1)
+    X_test = np.concatenate((X_test, X_test[:, 0:18] ** 2), axis=1)
 
     valid = None
     if len(args) >= 5:
         valid_num = int(args[4])
         order = np.random.permutation(X.shape[0])
         X, Y = X[order], Y[order]
-        valid = X[-valid_num:], Y[-valid_num:]
-        X, Y = X[:-valid_num], Y[:-valid_num]
+        valid = X[:valid_num], Y[:valid_num]
+        X, Y = X[valid_num:], Y[valid_num:]
 
     model = Linear_Regression()
     model.fit(X, Y, valid=valid)
@@ -139,6 +121,8 @@ def main(args):
         print('id,value', file=f)
         for (i, p) in enumerate(predict) :
             print('id_{},{}'.format(i, p[0]), file=f)
+
+    np.savetxt('coef.txt', model.W)
 
 if __name__ == '__main__':
     main(sys.argv)
