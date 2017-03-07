@@ -102,16 +102,20 @@ def main(args):
     X = X[:, select_range]
     X_test = X_test[:, select_range]
 
-    X = np.concatenate((X, X[:, 0:18] ** 2), axis=1)
-    X_test = np.concatenate((X_test, X_test[:, 0:18] ** 2), axis=1)
+    X = np.concatenate((X, X[:, 0:18] ** 3), axis=1)
+    X_test = np.concatenate((X_test, X_test[:, 0:18] ** 3), axis=1)
 
     valid = None
-    if len(args) >= 5:
+    try:
         valid_num = int(args[4])
         order = np.random.permutation(X.shape[0])
-        X, Y = X[order], Y[order]
-        valid = X[:valid_num], Y[:valid_num]
-        X, Y = X[valid_num:], Y[valid_num:]
+    except:
+        coef = np.loadtxt(args[4])
+        valid_num = coef[0].astype('int')
+        order = coef[1:].astype('int')
+    X, Y = X[order], Y[order]
+    valid = X[:valid_num], Y[:valid_num]
+    X, Y = X[valid_num:], Y[valid_num:]
 
     model = Linear_Regression()
     model.fit(X, Y, valid=valid)
@@ -122,7 +126,7 @@ def main(args):
         for (i, p) in enumerate(predict) :
             print('id_{},{}'.format(i, p[0]), file=f)
 
-    np.savetxt('coef.txt', model.W)
+    np.savetxt('coef.txt', np.concatenate((np.asarray(valid_num).reshape((1, )), order)), fmt='%d')
 
 if __name__ == '__main__':
     main(sys.argv)
