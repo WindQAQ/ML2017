@@ -70,54 +70,42 @@ class Linear_Regression():
     def _loss(self, X, Y):
         return np.sqrt(np.mean(self._error(X, Y) ** 2))
 
-    def _init_parameters(self):
-        self.B = 2.0 * np.random.rand() - 1.0
-        self.W = 2.0 * np.random.rand(self.feature_dim, 1) - 1.0
-
     def _scale(self, X, istrain=True):
         if istrain:
             self.mean = np.mean(X, axis=0)
             self.std = np.std(X, axis=0) + 1e-20
         return (X - self.mean) / self.std
 
-    def fit(self, _X, Y, valid, max_epoch=500000, lr=0.1):
+    def _add_bias(self, X):
+        return np.concatenate((np.ones((X.shape[0], 1)), X), axis=1)
+
+    def fit(self, _X, Y, valid):
         assert _X.shape[0] == Y.shape[0]
         N = _X.shape[0]
         self.feature_dim = feature_dim = _X.shape[1]
 
         X = self._scale(_X)
+        X_bias = self._add_bias(X)
+
+        self.W = np.linalg.lstsq(X_bias, Y)[0]
+        print('training loss: {}'.format(self._loss(X, Y)))
+
         if valid is not None:
             X_valid, Y_valid = valid
             X_valid = self._scale(X_valid, istrain=False)
-
-        self._init_parameters()
-
-        B_lr = 0.0
-        W_lr = np.zeros((feature_dim, 1))
-        for epoch in range(1, max_epoch+1):
-            error = self._error(X, Y)
-            B_grad = -np.sum(error) * 1.0 / N
-            W_grad = -np.dot(X.T, error) / N
-
-            B_lr += B_grad ** 2
-            W_lr += W_grad ** 2
-
-            self.B -= lr / np.sqrt(B_lr) * B_grad
-            self.W -= lr / np.sqrt(W_lr) * W_grad
-
-            if epoch % 1000 == 0:
-                print('[Epoch {}]: loss: {}'.format(epoch, self._loss(X, Y)))
-                if valid is not None:
-                    print('valid loss: {}'.format(self._loss(X_valid, Y_valid)))
+            print('valid loss: {}'.format(self._loss(X_valid, Y_valid)))
+            
 
     def predict(self, X):
         _X = np.reshape(X, (-1, self.feature_dim))
-        return np.dot(_X, self.W) + self.B
+        _X = self._add_bias(_X)
+        return np.dot(_X, self.W)
  
     def predict_test(self, X):
         _X = self._scale(X, istrain=False)
         _X = _X.reshape((-1, self.feature_dim))
-        return np.dot(_X, self.W) + self.B
+        _X = self._add_bias(_X)
+        return np.dot(_X, self.W)
 
 def main(args):
     X, Y = ReadTrainData(args[1])
@@ -144,7 +132,7 @@ def main(args):
         X, Y = X[:-valid_num], Y[:-valid_num]
 
     model = Linear_Regression()
-    model.fit(X, Y, valid=valid, max_epoch=10000, lr=0.5)
+    model.fit(X, Y, valid=valid)
 
     predict = model.predict_test(X_test)
     with open(args[3], 'w') as f:
