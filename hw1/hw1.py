@@ -124,7 +124,7 @@ def main(args):
     X_test = ReadTestData(args[2])
 
     select_attr = attrs
-    select_attr = ['PM10', 'PM2.5', 'WIND_DIR', 'WIND_SPEED', 'WS_HR', 'RAINFALL']
+    select_attr = ['PM10', 'PM2.5', 'O3', 'WIND_DIR', 'WIND_SPEED', 'WD_HR', 'WS_HR', 'RAINFALL']
     select_range = []
     for attr in select_attr:
         select_range += attr_range[attr]
@@ -132,8 +132,8 @@ def main(args):
     X = X[:, select_range]
     X_test = X_test[:, select_range]
 
-    X = np.concatenate((X, X ** 2), axis=1)
-    X_test = np.concatenate((X_test, X_test ** 2), axis=1)
+    X = np.concatenate((X, X[:, 0:18] ** 2), axis=1)
+    X_test = np.concatenate((X_test, X_test[:, 0:18] ** 2), axis=1)
 
     valid = None
     if len(args) >= 5:
@@ -144,7 +144,7 @@ def main(args):
         X, Y = X[:-valid_num], Y[:-valid_num]
 
     model = Linear_Regression()
-    model.fit(X, Y, valid=valid, max_epoch=10000, lr=0.5)
+    model.fit(X, Y, valid=valid, max_epoch=2000, lr=0.5)
 
     predict = model.predict_test(X_test)
     with open(args[3], 'w') as f:
