@@ -94,7 +94,7 @@ def main(args):
     X_test = ReadTestData(args[2])
 
     select_attr = attrs
-    select_attr = ['PM10', 'PM2.5', 'O3', 'WIND_DIR', 'WIND_SPEED', 'WD_HR', 'WS_HR', 'RAINFALL']
+    select_attr = ['PM10', 'PM2.5', 'O3', 'WIND_DIR', 'WIND_SPEED', 'WD_HR', 'WS_HR', 'RAINFALL', 'CO']
     select_range = []
     for attr in select_attr:
         select_range += attr_range[attr]
@@ -102,8 +102,8 @@ def main(args):
     X = X[:, select_range]
     X_test = X_test[:, select_range]
 
-    X = np.concatenate((X, X[:, 0:18] ** 3), axis=1)
-    X_test = np.concatenate((X_test, X_test[:, 0:18] ** 3), axis=1)
+    X = np.concatenate((X, X[:, 0:18] ** 3, np.multiply(X[:, 9:18], X[:, 18:27])), axis=1)
+    X_test = np.concatenate((X_test, X_test[:, 0:18] ** 3, np.multiply(X_test[:, 9:18], X_test[:, 18:27])), axis=1)
 
     valid = None
     try:
