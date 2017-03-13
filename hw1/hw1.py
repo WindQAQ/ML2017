@@ -68,7 +68,7 @@ class Linear_Regression():
         return Y - self.predict(X)
 
     def _loss(self, X, Y):
-        return np.sqrt(np.mean(self._error(X, Y) ** 2) + self.C * np.mean(self.W ** 2))
+        return np.sqrt(np.mean(self._error(X, Y) ** 2) + self.C * np.sum(self.W ** 2))
 
     def _init_parameters(self):
         self.B = 2.0 * np.random.rand() - 1.0
@@ -104,7 +104,7 @@ class Linear_Regression():
             W_lr += W_grad ** 2
 
             self.B = self.B - lr / np.sqrt(B_lr) * B_grad
-            self.W = self.W * (1 - (lr / np.sqrt(W_lr)) * C / feature_dim) - lr / np.sqrt(W_lr) * W_grad
+            self.W = self.W * (1 - (lr / np.sqrt(W_lr)) * C) - lr / np.sqrt(W_lr) * W_grad
 
             if epoch % 1000 == 0:
                 print('[Epoch {}]: loss: {}'.format(epoch, self._loss(X, Y)))
