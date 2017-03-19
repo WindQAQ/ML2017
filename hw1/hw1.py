@@ -18,15 +18,6 @@ def ReadTrainData(filename):
     data[data == 'NR'] = 0.0
     data = data.astype('float')
 
-    # classify wind direction
-    for i in range(14, data.shape[0], 18):
-        for j in range(0, data.shape[1]):
-            data[i, j] = math.sin(data[i, j] / (2*math.pi))
-
-    for i in range(15, data.shape[0], 18):
-        for j in range(0, data.shape[1]):
-            data[i, j] = math.sin(data[i, j] / (2*math.pi))
-
     X, Y = [], []
     for i in range(0, data.shape[0], 18*20):
         # i: start of each month
@@ -125,7 +116,7 @@ def main(args):
     X_test = ReadTestData(args[2])
 
     select_attr = attrs
-    select_attr = ['PM10', 'PM2.5', 'O3', 'WIND_DIR', 'WIND_SPEED', 'WD_HR', 'WS_HR', 'RAINFALL']
+    select_attr = ['PM10', 'PM2.5', 'O3', 'CO', 'SO2', 'WIND_DIR', 'WIND_SPEED', 'WD_HR', 'WS_HR', 'RAINFALL']
     select_range = []
     for attr in select_attr:
         select_range += attr_range[attr]
