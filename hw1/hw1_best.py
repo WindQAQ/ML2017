@@ -69,7 +69,8 @@ class Linear_Regression():
         X = self._scale(_X)
         X_bias = self._add_bias(X)
 
-        self.W = np.linalg.lstsq(X_bias, Y)[0]
+        #self.W = np.linalg.lstsq(X_bias, Y)[0]
+        self.W = np.dot(np.dot(np.linalg.inv(np.dot(X_bias.T, X_bias)), X_bias.T), Y)
         print('training loss: {}'.format(self._loss(X, Y)))
 
         if valid is not None:
