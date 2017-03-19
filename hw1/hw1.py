@@ -62,14 +62,14 @@ class Linear_Regression():
         return np.sqrt(np.mean(self._error(X, Y) ** 2) + self.C * np.sum(self.W ** 2))
 
     def _init_parameters(self):
-        self.B = 2.0 * np.random.rand() - 1.0
-        self.W = 2.0 * np.random.rand(self.feature_dim, 1) - 1.0
+        self.B = 0.0
+        self.W = np.ones((self.feature_dim, 1))
 
     def _scale(self, X, istrain=True):
         if istrain:
-            self.mean = np.mean(X, axis=0)
-            self.std = np.std(X, axis=0) + 1e-20
-        return (X - self.mean) / self.std
+            self.min = np.min(X, axis=0)
+            self.max = np.max(X, axis=0)
+        return (X - self.min) / (self.max - self.min)
 
     def fit(self, _X, Y, valid, max_epoch=500000, lr=0.1, C=0.0):
         assert _X.shape[0] == Y.shape[0]
@@ -124,8 +124,8 @@ def main(args):
     X = X[:, select_range]
     X_test = X_test[:, select_range]
 
-    X = np.concatenate((X, X[:, 0:18] ** 2), axis=1)
-    X_test = np.concatenate((X_test, X_test[:, 0:18] ** 2), axis=1)
+    X = np.concatenate((X, X ** 2, X[:, 9:18] * X[:, 18:27]), axis=1)
+    X_test = np.concatenate((X_test, X_test ** 2, X_test[:, 9:18] * X_test[:, 18:27]), axis=1)
 
     valid = None
     if len(args) >= 5:
@@ -136,7 +136,7 @@ def main(args):
         X, Y = X[:-valid_num], Y[:-valid_num]
 
     model = Linear_Regression()
-    model.fit(X, Y, valid=valid, max_epoch=20000, lr=0.5, C=0.0)
+    model.fit(X, Y, valid=valid, max_epoch=100000, lr=0.5, C=0.00001)
 
     predict = model.predict_test(X_test)
     with open(args[3], 'w') as f:
