@@ -35,15 +35,6 @@ def ReadTestData(filename):
     data[data == 'NR'] = 0.0
     data = data.astype('float')
 
-    # classify wind direction
-    for i in range(14, data.shape[0], 18):
-        for j in range(0, data.shape[1]):
-            data[i, j] = math.sin(data[i, j] / (2*math.pi))
-
-    for i in range(15, data.shape[0], 18):
-        for j in range(0, data.shape[1]):
-            data[i, j] = math.sin(data[i, j] / (2*math.pi))
-
     obs = np.vsplit(data, data.shape[0]/18)
     X = []
     for i in obs:
@@ -135,8 +126,10 @@ def main(args):
         valid = X[-valid_num:], Y[-valid_num:]
         X, Y = X[:-valid_num], Y[:-valid_num]
 
+    # remove July
+    X, Y = np.concatenate((X[:2826, :], X[3297:, :])), np.concatenate((Y[:2826, :], Y[3297:, :]))
     model = Linear_Regression()
-    model.fit(X, Y, valid=valid, max_epoch=100000, lr=0.5, C=0.00001)
+    model.fit(X, Y, valid=valid, max_epoch=35000, lr=0.5, C=0.0)
 
     predict = model.predict_test(X_test)
     with open(args[3], 'w') as f:
