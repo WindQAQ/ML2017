@@ -11,6 +11,8 @@ def read_data(filename, label=False):
     else:
         data = pd.read_csv(filename)
         data['square_hours'] = data['hours_per_week'] ** 2
+        data['square_gain'] = data['capital_gain'] ** 2
+        data['square_loss'] = data['capital_loss'] ** 2
         data['cubic_hours'] = data['hours_per_week'] ** 3
 
     return data.as_matrix().astype('float')
@@ -66,10 +68,10 @@ class Logistic_Regression():
         self._W_lr = self._W_lr + grad ** 2
         self._lr = self._init_lr / np.sqrt(self._W_lr)
 
-        self.W = self.W - self._lr * grad
+        self.W = self.W - self._lr * (grad + self.C * np.sum(self.W))
 
     def _gradient(self, X, Y, pred):
-        return -np.dot(X.T, (Y - pred)) + self.C * np.sum(self.W)
+        return -np.dot(X.T, (Y - pred))
 
     def _loss(self, X, Y, pred=None):
         # y_hat: prediction of model
