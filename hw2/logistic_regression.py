@@ -6,22 +6,28 @@ def sigmoid(X):
     return 1 / (1 + np.exp(-X))
 
 def read_data(filename, label=False):
-    raw_data = pd.read_csv(filename, header=None if label else 'infer').as_matrix()
+    if label:
+        data = pd.read_csv(filename, header=None)
+    else:
+        data = pd.read_csv(filename)
+        data['square_hours'] = data['hours_per_week'] ** 2
+        data['cubic_hours'] = data['hours_per_week'] ** 3
 
-    return raw_data.astype('float')
+    return data.as_matrix().astype('float')
     
 class Logistic_Regression():
     def __init__(self):
         pass
 
     def _init_para(self):
-        self.W = 2 * np.random.rand(self.feature_dim + 1, 1) - 1
+        self.W = np.zeros((self.feature_dim + 1, 1))
         self._W_lr = 0.0
 
-    def fit(self, X, Y, max_epochs=2000, lr=0.05):
+    def fit(self, X, Y, max_epochs=2000, lr=0.05, C=0.0):
         assert X.shape[0] == Y.shape[0]
         self.feature_dim = X.shape[1]
         self._init_lr = self._lr = lr
+        self.C = C
 
         self._init_para()
         
@@ -32,7 +38,7 @@ class Logistic_Regression():
         for epoch in range(1, max_epochs+1):
             self._step(X, Y)
 
-            if epoch % 1000 == 0:
+            if epoch % 100 == 0:
                 loss = self._loss(X, Y)
                 acc = self.evaluate(X, Y)
                 print('[Epoch {:5d}] - training loss: {:.5f}, accuracy: {:.5f}'.format(epoch, loss, acc))
@@ -63,7 +69,7 @@ class Logistic_Regression():
         self.W = self.W - self._lr * grad
 
     def _gradient(self, X, Y, pred):
-        return -np.dot(X.T, (Y - pred))
+        return -np.dot(X.T, (Y - pred)) + self.C * np.sum(self.W)
 
     def _loss(self, X, Y, pred=None):
         # y_hat: prediction of model
@@ -88,7 +94,7 @@ def main(args):
     X_test = read_data(args[3])
 
     model = Logistic_Regression()
-    model.fit(X, Y, max_epochs=3000, lr=0.05)
+    model.fit(X, Y, C=0.0, max_epochs=2000, lr=0.05)
 
     with open(args[4], 'w') as fout:
         print('id,label', file=fout)
