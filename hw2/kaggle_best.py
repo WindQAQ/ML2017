@@ -107,16 +107,16 @@ def main(args):
     X = np.concatenate((
                 X, 
                 X[:, square] ** 2,
-                X[:, cubic] ** 3, 
-                #(X[:, 3] - X[:, 4]).reshape((-1, 1)),
+                #X[:, cubic] ** 3, 
+                (X[:, 3] - X[:, 4]).reshape((-1, 1)),
                 #(X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 3
             ), axis=1)
 
     X_test = np.concatenate((
                 X_test, 
                 X_test[:, square] ** 2,
-                X_test[:, cubic] ** 3,
-                #(X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)),
+                #X_test[:, cubic] ** 3,
+                (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)),
                 #(X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 3
             ), axis=1)
 
