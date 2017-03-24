@@ -100,24 +100,24 @@ def main(args):
     Y = read_data(args[2], label=True)    
     X_test = read_data(args[3])
 
-    #square = [1, 3, 4, 5]
-    #cubic = [1, 3, 4, 5]
+    square = [0, 1, 3, 4, 5]
+    cubic = [0, 1, 3, 4, 5]
     square = np.arange(X.shape[1])
     cubic = np.arange(X.shape[1])
     X = np.concatenate((
                 X, 
                 X[:, square] ** 2,
-                #X[:, cubic] ** 3, 
+                X[:, cubic] ** 3, 
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)),
-                #(X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 3
+                (X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 3
             ), axis=1)
 
     X_test = np.concatenate((
                 X_test, 
                 X_test[:, square] ** 2,
-                #X_test[:, cubic] ** 3,
+                X_test[:, cubic] ** 3,
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)),
-                #(X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 3
+                (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 3
             ), axis=1)
 
     valid = None
