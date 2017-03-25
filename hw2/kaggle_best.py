@@ -111,7 +111,8 @@ def main(args):
                 X[:, square] ** 2,
                 X[:, cubic] ** 3, 
                 X[:, four] ** 4, 
-                X[:, five] ** 5, 
+                X[:, five] ** 5,
+                X[:, 6:] * X[:, 5].reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 3
             ), axis=1)
@@ -122,6 +123,7 @@ def main(args):
                 X_test[:, cubic] ** 3,
                 X_test[:, four] ** 4,
                 X_test[:, five] ** 5,
+                X_test[:, 6:] * X_test[:, 5].reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 3
             ), axis=1)
