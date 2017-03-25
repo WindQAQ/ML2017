@@ -102,12 +102,16 @@ def main(args):
 
     square = [0, 1, 3, 4, 5]
     cubic = [0, 1, 3, 4, 5]
-    square = np.arange(X.shape[1])
-    cubic = np.arange(X.shape[1])
+    four = [0, 1, 3, 4, 5]
+    five = [0, 1, 3, 4, 5]
+    #square = np.arange(X.shape[1])
+    #cubic = np.arange(X.shape[1])
     X = np.concatenate((
                 X, 
                 X[:, square] ** 2,
                 X[:, cubic] ** 3, 
+                X[:, four] ** 4, 
+                X[:, five] ** 5, 
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 3
             ), axis=1)
@@ -116,6 +120,8 @@ def main(args):
                 X_test, 
                 X_test[:, square] ** 2,
                 X_test[:, cubic] ** 3,
+                X_test[:, four] ** 4,
+                X_test[:, five] ** 5,
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 3
             ), axis=1)
@@ -129,7 +135,7 @@ def main(args):
         X_train, Y_train = X, Y
 
     model = Logistic_Regression()
-    model.fit(X_train, Y_train, valid=valid, C=0.0, max_epochs=2000, lr=0.05)
+    model.fit(X_train, Y_train, valid=valid, C=0.0, max_epochs=5000, lr=0.05)
 
     with open(args[4], 'w') as fout:
         print('id,label', file=fout)
