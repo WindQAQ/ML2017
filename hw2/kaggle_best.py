@@ -112,12 +112,15 @@ def main(args):
                 X[:, cubic] ** 3, 
                 X[:, four] ** 4, 
                 X[:, five] ** 5,
+                np.log(X[:, 0:2]),
                 #(X[:, 0] * X[:, 3]).reshape((-1, 1)),
-                #(X[:, 0] * X[:, 4]).reshape((-1, 1)),
+                #(X[:, 0] * X[:, 1]).reshape((-1, 1)),
                 (X[:, 0] * X[:, 5]).reshape((-1, 1)),
+                (X[:, 0] * X[:, 5]).reshape((-1, 1)) ** 2,
                 X[:, 6:] * X[:, 5].reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 3
+                #(X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 5
             ), axis=1)
 
     X_test = np.concatenate((
@@ -126,12 +129,15 @@ def main(args):
                 X_test[:, cubic] ** 3,
                 X_test[:, four] ** 4,
                 X_test[:, five] ** 5,
+                np.log(X_test[:, 0:2]),
                 #(X_test[:, 0] * X_test[:, 3]).reshape(-1, 1),
-                #(X_test[:, 0] * X_test[:, 4]).reshape(-1, 1),
+                #(X_test[:, 0] * X_test[:, 1]).reshape(-1, 1),
                 (X_test[:, 0] * X_test[:, 5]).reshape(-1, 1),
+                (X_test[:, 0] * X_test[:, 5]).reshape(-1, 1) ** 2,
                 X_test[:, 6:] * X_test[:, 5].reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 3
+                #(X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 5
             ), axis=1)
 
     valid = None
@@ -143,7 +149,7 @@ def main(args):
         X_train, Y_train = X, Y
 
     model = Logistic_Regression()
-    model.fit(X_train, Y_train, valid=valid, C=0.0, max_epochs=5000, lr=0.05)
+    model.fit(X_train, Y_train, valid=valid, C=0.0, max_epochs=2300, lr=0.05)
 
     with open(args[4], 'w') as fout:
         print('id,label', file=fout)
