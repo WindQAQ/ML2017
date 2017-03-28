@@ -104,23 +104,19 @@ def main(args):
     cubic = [0, 1, 3, 4, 5]
     four = [0, 1, 3, 4, 5]
     five = [0, 1, 3, 4, 5]
-    #square = np.arange(X.shape[1])
-    #cubic = np.arange(X.shape[1])
+
     X = np.concatenate((
                 X, 
                 X[:, square] ** 2,
                 X[:, cubic] ** 3, 
                 X[:, four] ** 4, 
                 X[:, five] ** 5,
-                np.log(X[:, 0:2]),
-                #(X[:, 0] * X[:, 3]).reshape((-1, 1)),
-                #(X[:, 0] * X[:, 1]).reshape((-1, 1)),
+                np.log(X[:, [0, 3]] + 1e-10),
                 (X[:, 0] * X[:, 5]).reshape((-1, 1)),
                 (X[:, 0] * X[:, 5]).reshape((-1, 1)) ** 2,
                 X[:, 6:] * X[:, 5].reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 3
-                #(X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 5
             ), axis=1)
 
     X_test = np.concatenate((
@@ -129,15 +125,12 @@ def main(args):
                 X_test[:, cubic] ** 3,
                 X_test[:, four] ** 4,
                 X_test[:, five] ** 5,
-                np.log(X_test[:, 0:2]),
-                #(X_test[:, 0] * X_test[:, 3]).reshape(-1, 1),
-                #(X_test[:, 0] * X_test[:, 1]).reshape(-1, 1),
+                np.log(X_test[:, [0, 3]] + 1e-10),
                 (X_test[:, 0] * X_test[:, 5]).reshape(-1, 1),
                 (X_test[:, 0] * X_test[:, 5]).reshape(-1, 1) ** 2,
                 X_test[:, 6:] * X_test[:, 5].reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 3
-                #(X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 5
             ), axis=1)
 
     valid = None
