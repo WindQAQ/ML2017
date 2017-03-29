@@ -115,6 +115,7 @@ def main(args):
                 (X[:, 0] * X[:, 3]).reshape((-1, 1)),
                 (X[:, 0] * X[:, 5]).reshape((-1, 1)),
                 (X[:, 0] * X[:, 5]).reshape((-1, 1)) ** 2,
+                (X[:, 3] * X[:, 5]).reshape((-1, 1)),
                 X[:, 6:] * X[:, 5].reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)),
                 (X[:, 3] - X[:, 4]).reshape((-1, 1)) ** 3
@@ -130,6 +131,7 @@ def main(args):
                 (X_test[:, 0] * X_test[:, 3]).reshape(-1, 1),
                 (X_test[:, 0] * X_test[:, 5]).reshape(-1, 1),
                 (X_test[:, 0] * X_test[:, 5]).reshape(-1, 1) ** 2,
+                (X_test[:, 3] * X_test[:, 5]).reshape(-1, 1),
                 X_test[:, 6:] * X_test[:, 5].reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)),
                 (X_test[:, 3] - X_test[:, 4]).reshape((-1, 1)) ** 3
@@ -144,7 +146,7 @@ def main(args):
         X_train, Y_train = X, Y
 
     model = Logistic_Regression()
-    model.fit(X_train, Y_train, valid=valid, C=0.0, max_epochs=2300, lr=0.05)
+    model.fit(X_train, Y_train, valid=valid, C=0.0, max_epochs=3000, lr=0.05)
 
     with open(args[4], 'w') as fout:
         print('id,label', file=fout)
