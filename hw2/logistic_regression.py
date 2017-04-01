@@ -78,7 +78,7 @@ class Logistic_Regression():
         # -mean(y * log(y_hat) + ((1 - y) * log((1-y_hat))))
         if pred is None:
             pred = self.predict(X)
-        return -np.mean(Y * np.log(pred) + (1 - Y) * np.log((1 - pred)))
+        return -np.mean(Y * np.log(pred + 1e-20) + (1 - Y) * np.log((1 - pred + 1e-20)))
 
     def evaluate(self, X, Y):
         pred = self.predict(X)
