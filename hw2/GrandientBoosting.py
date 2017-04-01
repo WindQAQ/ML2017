@@ -1,6 +1,7 @@
 import sys
 import pandas as pd
 import numpy as np
+import pickle
 
 class DecisionNode():
     def __init__(self, attr=None, thres=None, left=None, right=None, pred=None):
@@ -164,21 +165,37 @@ def main(args):
     Y = one_hot(Y)
 
     valid = None
-    if len(args) == 6:
+    if len(args) >= 6:
         valid_num = int(args[5])
         X_train, Y_train = X[:-valid_num], Y[:-valid_num]
         valid = (X[-valid_num:], Y[-valid_num:])
     else:
         X_train, Y_train = X, Y
 
-    model = GradientBoostClassifier(n_estimators=60, max_depth=3, learning_rate=0.45)
-    model.fit(X_train, Y_train)
+    if len(args) == 7:
+        # load model
+        print('load model, path {}'.format(args[6]))
+        with open(args[6], 'rb') as fmodel:
+            model = pickle.load(fmodel)
+    else:
+        # train model
+        model = GradientBoostClassifier(n_estimators=1, learning_rate=0.5, max_depth=3)
+        model.fit(X_train, Y_train)
 
     try:
         pred = model.predict(X_train)
-        print(np.mean(pred.flatten() == Y_train.flatten()))
+        train_acc = np.mean(pred.flatten() == np.argmax(Y_train, axis=1).flatten())
+        print('training accuracy: {}'.format(train_acc))
+        if valid is not None:
+            pred = model.predict(valid[0])
+            valid_acc = np.mean(pred.flatten() == np.argmax(valid[1], axis=1).flatten())
+            print('valid accuracy: {}'.format(valid_acc))
     except:
         pass
+
+    if len(args) < 7:
+        with open('model', 'wb') as fmodel:
+            pickle.dump(model, fmodel, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(args[4], 'w') as fout:
         print('id,label', file=fout)
