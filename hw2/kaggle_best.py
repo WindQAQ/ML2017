@@ -179,7 +179,7 @@ def main(args):
             model = pickle.load(fmodel)
     else:
         # train model
-        model = GradientBoostClassifier(n_estimators=250, learning_rate=0.5, max_depth=4)
+        model = GradientBoostClassifier(n_estimators=300, learning_rate=0.5, max_depth=4)
         model.fit(X_train, Y_train)
 
     try:
