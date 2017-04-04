@@ -12,12 +12,17 @@ def read_data(filename, label=False):
 
     return data.as_matrix().astype(dtype)
     
+def sigmoid(z):
+    res = 1 / (1.0 + np.exp(-z))
+    return np.clip(res, 0.00000000000001, 0.99999999999999)
+
 class GenerativeModel():
     def __init__(self):
         pass
 
     def _get_attr(self, X):
-        return np.mean(X, axis=0), np.std(X, axis=0) 
+        return 0, 1
+        #return np.mean(X, axis=0), np.std(X, axis=0) 
 
     def _scale(self, X):
         return (X - self._mean) / (self._std + 1e-20)
@@ -33,33 +38,34 @@ class GenerativeModel():
             X_valid = self._scale(valid[0])
             Y_valid = valid[1]
         
-        self._num, self._mu, self._cov, self._invcov, self._det = [], [], [], [], []
+        self._num, self._mu = [], []
+        self._share_cov = 0.0
         for i in range(num_classes):
             C = X[(Y == i).flatten()]
             num = C.shape[0]
             mu = np.mean(C, axis=0)
             cov = self._covariance(C, mu)
-            invcov = np.linalg.pinv(cov)
-            det = np.linalg.det(cov)
             self._num.append(num)
             self._mu.append(mu)
-            self._cov.append(cov)
-            self._invcov.append(invcov)
-            self._det.append(det)
+            self._share_cov += (num / X.shape[0]) * cov
 
+        self._inv_cov = np.linalg.inv(self._share_cov)
         print('training accuracy: {:.5f}'.format(self.evaluate(X, Y, test=False)))
         if valid is not None:
             print('valid accuracy: {:.5f}'.format(self.evaluate(X_valid, Y_valid, test=False)))
 
     def evaluate(self, X, Y, test=True):
         pred = self.predict(X, test=test)
-        return np.mean(Y == pred)
+        pred = np.around(1.0-pred)
+        result = (Y.flatten() == pred)
+        return np.mean(result)
 
     def _p(self, x, mu, invcov, num):
         return np.exp(-1./2 * self._vec_inner_prod(np.dot((x-mu), invcov), (x-mu).T)) * num
 
     def _covariance(self, X, mu):
         return np.mean([(X[i]-mu).reshape((-1, 1)) * (X[i]-mu).reshape((1, -1)) for i in range(X.shape[0])], axis=0)
+        self._share_cov /= X.shape[0]
 
     def _vec_inner_prod(self, A, B):
         return np.array([np.dot(A[i, :], B[:, i]) for i in range(A.shape[0])])
@@ -68,11 +74,12 @@ class GenerativeModel():
         if test:
             X = self._scale(X)
 
-        prob = []
-        for (num, mu, invcov, det) in zip(self._num, self._mu, self._invcov, self._det):
-            prob.append(self._p(X, mu, invcov, num))
-       
-        return np.argmax(prob, axis=0)
+        W = np.dot( (self._mu[0]-self._mu[1]), self._inv_cov)
+        X = X.T
+        B = (-0.5) * np.dot(np.dot([self._mu[0]], self._inv_cov), self._mu[0]) + (0.5) * np.dot(np.dot([self._mu[1]], self._inv_cov), self._mu[1]) + np.log(self._num[0]/self._num[1])
+        a = np.dot(W, X) + B
+        y = sigmoid(a)
+        return y
 
 def main(args):
     X = read_data(args[1])
@@ -93,7 +100,7 @@ def main(args):
         print('id,label', file=fout)
         pred = model.predict(X_test, test=True)
         for (i, v) in enumerate(pred.flatten()):
-            print('{},{}'.format(i+1, v), file=fout)
+            print('{},{}'.format(i+1, 0 if v >= 0.5 else 1), file=fout)
 
 if __name__ == '__main__':
     main(sys.argv)
