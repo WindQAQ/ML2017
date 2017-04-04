@@ -65,7 +65,6 @@ class GenerativeModel():
 
     def _covariance(self, X, mu):
         return np.mean([(X[i]-mu).reshape((-1, 1)) * (X[i]-mu).reshape((1, -1)) for i in range(X.shape[0])], axis=0)
-        self._share_cov /= X.shape[0]
 
     def _vec_inner_prod(self, A, B):
         return np.array([np.dot(A[i, :], B[:, i]) for i in range(A.shape[0])])
