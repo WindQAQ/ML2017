@@ -6,6 +6,8 @@ from keras.layers import Dropout
 from keras.layers import Flatten
 from keras.layers import Conv2D
 from keras.layers import MaxPooling2D
+from keras.layers import AveragePooling2D
+from keras.callbacks import EarlyStopping
 from keras.utils import to_categorical
 
 def read_data(filename, label=True, width=48, height=48):
@@ -25,35 +27,41 @@ def read_data(filename, label=True, width=48, height=48):
 
 def main(args):
     width = height = 48
-    X_train, Y_train = read_data(args[1], label=True, width=width, height=height)
+
+    print('read data')
+    X, Y = read_data(args[1], label=True, width=width, height=height)
 
     input_shape = (width, height, 1)
-    num_classes = int(np.max(Y_train) + 1)
-    batch_size = 256
-    epochs = 50
-
-    Y_train = to_categorical(Y_train, num_classes)
+    num_classes = int(np.max(Y) + 1)
+    batch_size = 128
+    epochs = 10000
 
     print('input_shape: {}, num_classes: {}'.format(input_shape, num_classes))
 
     model = Sequential()
 
-    model.add(Conv2D(25, kernel_size=(3, 3), input_shape=input_shape, activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Conv2D(50, kernel_size=(3, 3), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(32, kernel_size=(3, 3), input_shape=input_shape, activation='relu'))
+    model.add(Conv2D(64, kernel_size=(3, 3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(3, 3)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(128, kernel_size=(3, 3), activation='relu'))
+    model.add(Conv2D(256, kernel_size=(3, 3), activation='relu'))
+    model.add(AveragePooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
 
     model.add(Flatten())
 
-    model.add(Dense(100, activation='relu'))
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation='softmax'))
 
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-    model.fit(X_train, Y_train, batch_size=batch_size, epochs=epochs, validation_split=0.2)
+    model.summary()
 
-    score = model.evaluate(X_train, Y_train)
-    print('Training accuracy: {}'.format(score))
+    callbacks = [EarlyStopping(monitor='val_loss', patience=5)]
+    model.fit(X, Y, validation_split=0.2, batch_size=batch_size, epochs=epochs, callbacks=callbacks)
 
     model.save(args[2])    
 
