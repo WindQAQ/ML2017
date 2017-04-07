@@ -20,7 +20,7 @@ def read_data(filename, label=True, width=48, height=48):
 def submit(pred, filename):
     with open(filename, 'w') as f:
         print('id,label', file=f)
-        print('\n'.join(['{},{}'.format(i+1, p) for (i, p) in enumerate(pred)]), file=f)
+        print('\n'.join(['{},{}'.format(i, p) for (i, p) in enumerate(pred)]), file=f)
 
 def main(args):
     width = height = 48
