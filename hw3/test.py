@@ -25,6 +25,9 @@ def submit(pred, filename):
 def main(args):
     width = height = 48
     X_test = read_data(args[1], label=False, width=width, height=height)
+    attr = np.load(args[4])
+
+    X_test = (X_test - attr[0]) / (attr[1] + 1e-20)
 
     model = load_model(args[3])
     pred = model.predict_classes(X_test)
