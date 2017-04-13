@@ -10,6 +10,7 @@ from keras.layers import AveragePooling2D
 from keras.layers.advanced_activations import *
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import EarlyStopping
+from keras.callbacks import ModelCheckpoint
 from keras.utils import to_categorical
 
 def read_data(filename, label=True, width=48, height=48):
@@ -36,7 +37,7 @@ def main(args):
     input_shape = (width, height, 1)
     num_classes = int(np.max(Y) + 1)
     batch_size = 128
-    epochs = 300
+    epochs = 1000
 
     mean, std = np.mean(X, axis=0), np.std(X, axis=0)
     X = (X - mean) / (std + 1e-20)
@@ -83,14 +84,16 @@ def main(args):
 
     model.summary()
 
+    callbacks = []
+    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}.h5', monitor='loss', period=50))
     #callbacks = [EarlyStopping(monitor='val_loss', patience=312)]
-    callbacks = None
     #model.fit(X, Y, batch_size=batch_size, epochs=epochs, callbacks=callbacks)
     
     model.fit_generator(
             datagen.flow(X, Y, batch_size=batch_size), 
             steps_per_epoch=len(X) // batch_size,
-            epochs=epochs)
+            epochs=epochs,
+            callbacks=callbacks)
 
     model.save(args[2])    
 
