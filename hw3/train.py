@@ -6,6 +6,7 @@ from keras.layers import Dropout
 from keras.layers import Flatten
 from keras.layers import Conv2D
 from keras.layers import MaxPooling2D
+from keras.layers import ZeroPadding2D
 from keras.layers import AveragePooling2D
 from keras.layers import Activation
 from keras.layers.advanced_activations import *
@@ -43,8 +44,12 @@ def main(args):
     mean, std = np.mean(X, axis=0), np.std(X, axis=0)
     X = (X - mean) / (std + 1e-20)
 
-    Y = to_categorical(Y, num_classes)
     np.save('attr.npy', [mean, std])
+
+    X = np.concatenate((X, X[:, :, ::-1]), axis=0)
+    Y = np.concatenate((Y, Y), axis=0)
+
+    Y = to_categorical(Y, num_classes)
 
     print('input_shape: {}, num_classes: {}'.format(input_shape, num_classes))
 
@@ -74,9 +79,9 @@ def main(args):
 
     model.add(Conv2D(512, kernel_size=(3, 3), kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
-    model.add(Conv2D(512, kernel_size=(3, 3), kernel_initializer='glorot_normal'))
+    model.add(Conv2D(1024, kernel_size=(3, 3), kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
-    model.add(AveragePooling2D(pool_size=(2, 2)))
+    model.add(AveragePooling2D(pool_size=(3, 3), strides=(2, 2)))
     model.add(Dropout(0.4))
     model.add(Flatten())
 
@@ -89,7 +94,7 @@ def main(args):
     model.summary()
 
     callbacks = []
-    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}-{loss:.5f}.h5', period=5))
+    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}.h5', monitor='loss', period=1))
     #callbacks = [EarlyStopping(monitor='val_loss', patience=312)]
     #model.fit(X, Y, batch_size=batch_size, epochs=epochs, callbacks=callbacks)
     
@@ -100,7 +105,7 @@ def main(args):
             callbacks=callbacks
             )
 
-    model.save(args[2])    
+    model.save(args[2])
 
 if __name__ == '__main__':
     main(sys.argv)
