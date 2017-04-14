@@ -103,7 +103,7 @@ def main(args):
     model.summary()
 
     callbacks = []
-    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}-{val_acc:.5f}.h5', period=1))
+    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}.h5', monitor='loss', period=1))
     #callbacks = [EarlyStopping(monitor='val_loss', patience=312)]
     #model.fit(X, Y, batch_size=batch_size, epochs=epochs, callbacks=callbacks)
     
