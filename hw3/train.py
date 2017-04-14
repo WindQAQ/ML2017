@@ -10,6 +10,7 @@ from keras.layers import ZeroPadding2D
 from keras.layers import AveragePooling2D
 from keras.layers import Activation
 from keras.layers.advanced_activations import *
+from keras.layers.normalization import BatchNormalization
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
@@ -42,9 +43,9 @@ def main(args):
     epochs = 100000000
 
     mean, std = np.mean(X, axis=0), np.std(X, axis=0)
-    X = (X - mean) / (std + 1e-20)
-
     np.save('attr.npy', [mean, std])
+
+    X = (X - mean) / (std + 1e-20)
 
     X = np.concatenate((X, X[:, :, ::-1]), axis=0)
     Y = np.concatenate((Y, Y), axis=0)
@@ -63,29 +64,37 @@ def main(args):
 
     model = Sequential()
 
-    model.add(Conv2D(32, kernel_size=(3, 3), input_shape=input_shape, kernel_initializer='glorot_normal'))
+    model.add(Conv2D(64, kernel_size=(3, 3), input_shape=input_shape, padding='same', kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
-    model.add(Conv2D(64, kernel_size=(3, 3), kernel_initializer='glorot_normal'))
-    model.add(LeakyReLU(alpha=1./20))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
     model.add(Dropout(0.25))
 
-    model.add(Conv2D(128, kernel_size=(3, 3), kernel_initializer='glorot_normal'))
+    model.add(Conv2D(128, kernel_size=(5, 5), padding='same', kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
-    model.add(Conv2D(256, kernel_size=(3, 3), kernel_initializer='glorot_normal'))
-    model.add(LeakyReLU(alpha=1./20))
-    model.add(AveragePooling2D(pool_size=(2, 2)))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
     model.add(Dropout(0.25))
 
-    model.add(Conv2D(512, kernel_size=(3, 3), kernel_initializer='glorot_normal'))
+    model.add(Conv2D(512, kernel_size=(3, 3), padding='same', kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
-    model.add(Conv2D(1024, kernel_size=(3, 3), kernel_initializer='glorot_normal'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(512, kernel_size=(3, 3), padding='same', kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
-    model.add(AveragePooling2D(pool_size=(3, 3), strides=(2, 2)))
-    model.add(Dropout(0.4))
+    model.add(BatchNormalization())
+    model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
+    model.add(Dropout(0.25))
+
     model.add(Flatten())
 
-    model.add(Dense(2048, activation='relu', kernel_initializer='glorot_normal'))
+    model.add(Dense(256, activation='relu', kernel_initializer='glorot_normal'))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
+    model.add(Dense(512, activation='relu', kernel_initializer='glorot_normal'))
+    model.add(BatchNormalization())
     model.add(Dropout(0.5))
     model.add(Dense(num_classes, activation='softmax', kernel_initializer='glorot_normal'))
 
@@ -94,18 +103,18 @@ def main(args):
     model.summary()
 
     callbacks = []
-    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}.h5', monitor='loss', period=1))
+    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}-{val_acc:.5f}.h5', period=1))
     #callbacks = [EarlyStopping(monitor='val_loss', patience=312)]
     #model.fit(X, Y, batch_size=batch_size, epochs=epochs, callbacks=callbacks)
     
     model.fit_generator(
             datagen.flow(X, Y, batch_size=batch_size), 
-            steps_per_epoch=10*len(X)//batch_size,
+            steps_per_epoch=5*len(X)//batch_size,
             epochs=epochs,
             callbacks=callbacks
             )
 
-    model.save(args[2])
+    model.save(args[2])    
 
 if __name__ == '__main__':
     main(sys.argv)
