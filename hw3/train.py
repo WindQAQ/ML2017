@@ -74,23 +74,23 @@ def main(args):
     model.add(LeakyReLU(alpha=1./20))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.3))
 
     model.add(Conv2D(512, kernel_size=(3, 3), padding='same', kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.35))
 
     model.add(Conv2D(512, kernel_size=(3, 3), padding='same', kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
-    model.add(Dropout(0.25))
+    model.add(Dropout(0.4))
 
     model.add(Flatten())
 
-    model.add(Dense(256, activation='relu', kernel_initializer='glorot_normal'))
+    model.add(Dense(512, activation='relu', kernel_initializer='glorot_normal'))
     model.add(BatchNormalization())
     model.add(Dropout(0.5))
     model.add(Dense(512, activation='relu', kernel_initializer='glorot_normal'))
