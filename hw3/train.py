@@ -47,13 +47,14 @@ def main(args):
 
     X = (X - mean) / (std + 1e-20)
 
-    X = np.concatenate((X, X[:, :, ::-1]), axis=0)
-    Y = np.concatenate((Y, Y), axis=0)
-
-    Y = to_categorical(Y, num_classes)
-
     X_train, X_valid = X[:-5000], X[-5000:]
     Y_train, Y_valid = Y[:-5000], Y[-5000:]
+
+    X_train = np.concatenate((X_train, X_train[:, :, ::-1]), axis=0)
+    Y_train = np.concatenate((Y_train, Y_train), axis=0)
+
+    Y_train = to_categorical(Y_train, num_classes)
+    Y_valid = to_categorical(Y_valid, num_classes)
 
     print('input_shape: {}, num_classes: {}'.format(input_shape, num_classes))
 
