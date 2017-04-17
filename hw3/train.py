@@ -52,6 +52,9 @@ def main(args):
 
     Y = to_categorical(Y, num_classes)
 
+    X_train, X_valid = X[:-5000], X[-5000:]
+    Y_train, Y_valid = Y[:-5000], Y[-5000:]
+
     print('input_shape: {}, num_classes: {}'.format(input_shape, num_classes))
 
     datagen = ImageDataGenerator(
@@ -64,13 +67,13 @@ def main(args):
 
     model = Sequential()
 
-    model.add(Conv2D(64, kernel_size=(3, 3), input_shape=input_shape, padding='same', kernel_initializer='glorot_normal'))
+    model.add(Conv2D(64, kernel_size=(5, 5), input_shape=input_shape, padding='same', kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
     model.add(Dropout(0.25))
 
-    model.add(Conv2D(128, kernel_size=(5, 5), padding='same', kernel_initializer='glorot_normal'))
+    model.add(Conv2D(128, kernel_size=(3, 3), padding='same', kernel_initializer='glorot_normal'))
     model.add(LeakyReLU(alpha=1./20))
     model.add(BatchNormalization())
     model.add(MaxPooling2D(pool_size=(2, 2), padding='same'))
@@ -103,14 +106,13 @@ def main(args):
     model.summary()
 
     callbacks = []
-    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}.h5', monitor='loss', period=1))
-    #callbacks = [EarlyStopping(monitor='val_loss', patience=312)]
-    #model.fit(X, Y, batch_size=batch_size, epochs=epochs, callbacks=callbacks)
+    callbacks.append(ModelCheckpoint('ckpt/model-{epoch:05d}-{val_acc:.5f}.h5', monitor='val_acc', save_best_only=True, period=1))
     
     model.fit_generator(
-            datagen.flow(X, Y, batch_size=batch_size), 
-            steps_per_epoch=5*len(X)//batch_size,
+            datagen.flow(X_train, Y_train, batch_size=batch_size), 
+            steps_per_epoch=5*len(X_train)//batch_size,
             epochs=epochs,
+            validation_data=(X_valid, Y_valid),
             callbacks=callbacks
             )
 
