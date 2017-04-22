@@ -25,12 +25,16 @@ def submit(pred, filename):
 def main(args):
     width = height = 48
     X_test = read_data(args[1], label=False, width=width, height=height)
-    attr = np.load(args[4])
+    attr = np.load(args[3])
 
     X_test = (X_test - attr[0]) / (attr[1] + 1e-20)
 
-    model = load_model(args[3])
-    pred = model.predict_classes(X_test)
+    proba = 0.0
+    for mfilename in args[4:]:
+        model = load_model(mfilename)
+        proba += model.predict(X_test)
+
+    pred = np.argmax(proba, axis=-1)
     
     submit(pred, args[2])
 

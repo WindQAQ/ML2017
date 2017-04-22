@@ -1,5 +1,3 @@
 #!/usr/bin/env bash
 
-cat model/model-part* > model.h5
-
-python3.6 test.py $1 $2 model.h5 attr.npy
+python3.6 test.py $1 $2 attr.npy model/model1.h5 model/model2.h5 model/model3.h5
