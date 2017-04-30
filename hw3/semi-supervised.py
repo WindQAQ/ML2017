@@ -50,8 +50,8 @@ def main(args):
     X_train, X_valid = X[:-5000], X[-5000:]
     Y_train, Y_valid = Y[:-5000], Y[-5000:]
 
-    X_train = np.concatenate((X_train, X_train[:, :, ::-1]), axis=0)
-    Y_train = np.concatenate((Y_train, Y_train), axis=0)
+    #X_train = np.concatenate((X_train, X_train[:, :, ::-1]), axis=0)
+    #Y_train = np.concatenate((Y_train, Y_train), axis=0)
 
     order = np.random.permutation(X_train.shape[0])
     X_train, Y_train = X_train[order], Y_train[order]
