@@ -15,7 +15,8 @@ def main():
         pca = decomposition.PCA()
         pca.fit(X)
         cum = np.cumsum(pca.explained_variance_ratio_)
-        ans.append(np.sum(cum <= 0.95))
+        d = np.sum(cum <= 0.876)
+        ans.append(d if d != 0 else 1)
 
     with open(sys.argv[2], 'w') as fout:
         print('SetId,LogDim', file=fout)
