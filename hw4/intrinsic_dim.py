@@ -11,7 +11,8 @@ def LL(d, p, k, N):
 
 def main():
     data = load_data(sys.argv[1])
-    
+    table = np.load(sys.argv[2])
+
     n_jobs = multiprocessing.cpu_count()
     D = 60
     k = 10 # for MiND_ML
@@ -45,21 +46,29 @@ def main():
         #print('\tIDEA estimator: {}'.format(d_hat))
 
         # MLE
-        if d_hat >= 17:
-            knn = 0.5 * np.log(distances[:, 1:k2+1])
-            S = np.cumsum(knn, axis=-1)
-            idk = np.arange(k1, k2+1)
-            d_hat = -(idk-2) / (S[:, k1-1:k2] - knn[:, k1-1:k2] * idk)
-            d_hat = np.mean(d_hat)
-            d_hat = np.round(d_hat).astype(int)
-            print('\tMLE estimator: {}'.format(d_hat))
+        #if d_hat >= 17:
+        #    knn = 0.5 * np.log(distances[:, 1:k2+1])
+        #    S = np.cumsum(knn, axis=-1)
+        #    idk = np.arange(k1, k2+1)
+        #    d_hat = -(idk-2) / (S[:, k1-1:k2] - knn[:, k1-1:k2] * idk)
+        #    d_hat = np.mean(d_hat)
+        #    d_hat = np.round(d_hat).astype(int)
+        #    print('\tMLE estimator: {}'.format(d_hat))
+        
+        if d_hat >= 14:
+            knn = distances[:, 1]
+            std = np.std(knn)
+            diff = np.abs(table-std)
+            #if d_hat < np.argmin(diff) + 1 + 41:
+            d_hat = np.argmin(diff) + 1
+            print('\tlook up table estimator: {}'.format(d_hat))
 
         ans.append(d_hat)
 
         print('\tEstimation of intrinsic dimension: {}'.format(d_hat))
         print()
 
-    with open(sys.argv[2], 'w') as fout:
+    with open(sys.argv[3], 'w') as fout:
         print('SetId,LogDim', file=fout)
         print('\n'.join(['{},{}'.format(i, np.log(d)) for (i, d) in enumerate(ans)]), file=fout)
 
