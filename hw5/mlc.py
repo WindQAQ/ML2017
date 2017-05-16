@@ -5,6 +5,8 @@ from gensim.models import doc2vec
 from sklearn.svm import SVC
 from sklearn.metrics import f1_score
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.multiclass import OneVsOneClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import MultiLabelBinarizer
 from keras.preprocessing.text import text_to_word_sequence
 
@@ -30,7 +32,7 @@ def read_data(filename, isTrain=True):
                         tags=['TRAIN_'+id]
                         )
                 sentences.append(sentence)
-                labels.append(label.split(','))
+                labels.append(label.split(' '))
             return sentences, labels
         else:
             for line in f:
@@ -45,12 +47,12 @@ def read_data(filename, isTrain=True):
 
 def submit(filename, labels):
     with open(filename, 'w') as fout:
-        print('id,tags',file=fout)
+        print('"id","tags"',file=fout)
         for id, label in enumerate(labels):
             if len(label) == 0:
-                print('{},"FICTION"'.format(id), file=fout)
+                print('"{}","FICTION"'.format(id), file=fout)
             else:
-                print('{},"{}"'.format(id,','.join([l for l in label])), file=fout)
+                print('"{}","{}"'.format(id,' '.join([l for l in label])), file=fout)
 
 
 @print_func
@@ -67,14 +69,14 @@ def parse_args():
 class ArticleClassifier():
     def __init__(self, sentences, *args, **kwargs):
         self.d2v = doc2vec.Doc2Vec(sentences, **kwargs)
-        self.OvR = OneVsRestClassifier(SVC(C=25., class_weight='balanced'), n_jobs=-1)
+        self.OvR = OneVsRestClassifier(SVC(C=25.0, class_weight='balanced'), n_jobs=-1)
         self.mlb = MultiLabelBinarizer()
 
     def train_doc2vec(self, sentences, epochs):
         total_words = sum([len(sen.words) for sen in sentences])
         self.d2v.train(sentences, total_words=total_words, epochs=epochs)
 
-    def save_doc2vec(self, path):
+    def save_doc2vec(self, path):   
         self.d2v.save(path)
 
     def get_doc2vec(self, tags):
@@ -114,7 +116,11 @@ def main(args):
         labels = model.fit_transform_mlb(labels)
 
         print('multilabel')
-        model.fit_OvR(X_train, labels)
+        model.fit_OvR(X_train[:-400], labels[:-400])
+
+        print('valid f1')
+        pred = model.predict(X_train[-400:])
+        print(f1_score(labels[-400:], pred, average='micro'))
 
         pickle.dump(model, open(args.save, 'wb'))
     else:

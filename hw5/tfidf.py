@@ -36,7 +36,7 @@ def read_data(filename, isTrain=True):
                 id, label, text = line.strip('\r\n').split('"', 2)
                 id = id[:-1]
                 sentences.append(text[1:])
-                labels.append(label.split(','))
+                labels.append(label.split(' '))
             return sentences, labels
         else:
             for line in f:
@@ -48,12 +48,12 @@ def read_data(filename, isTrain=True):
 @print_func
 def submit(filename, labels):
     with open(filename, 'w') as fout:
-        print('id,tags',file=fout)
+        print('"id","tags"',file=fout)
         for id, label in enumerate(labels):
             if len(label) == 0:
-                print('{},"FICTION"'.format(id), file=fout)
+                print('"{}","FICTION"'.format(id), file=fout)
             else:
-                print('{},"{}"'.format(id,','.join([l for l in label])), file=fout)
+                print('"{}","{}"'.format(id,' '.join([l for l in label])), file=fout)
 
 
 def main(args):
