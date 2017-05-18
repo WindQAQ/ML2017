@@ -5,6 +5,7 @@ from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.model_selection import cross_val_score
 from sklearn.metrics import f1_score
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -65,25 +66,27 @@ def main(args):
         labels = mlb.fit_transform(labels)
 
         model = Pipeline([
-            ('vectorizer', CountVectorizer(stop_words='english')),
+            ('vectorizer', CountVectorizer(stop_words='english', ngram_range=(1, 3), max_features=40000)),
             ('tfidf', TfidfTransformer()),
-            ('clf', OneVsRestClassifier(LinearSVC(C=0.001, class_weight='balanced')))])
+            ('clf', OneVsRestClassifier(LinearSVC(C=0.0005, class_weight='balanced', random_state=42)))])
+    
+        scores = cross_val_score(model, X_train, labels, cv=4, scoring='f1_samples')
+        print(scores, scores.mean(), scores.std())
         
-        '''
         model.fit(X_train[:-400], labels[:-400])
         pred = model.predict(X_train[:-400])
         print(f1_score(labels[:-400], pred, average='micro'))
         pred = model.predict(X_train[-400:])
         print(f1_score(labels[-400:], pred, average='micro'))
-        '''
+        
 
-        '''
+        
         model.fit(X_train[400:], labels[400:])
         pred = model.predict(X_train[400:])
         print(f1_score(labels[400:], pred, average='micro'))
         pred = model.predict(X_train[:400])
         print(f1_score(labels[:400], pred, average='micro'))
-        '''
+        
 
         model.fit(X_train, labels)
         pred = model.predict(X_train)
