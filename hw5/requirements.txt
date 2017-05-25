@@ -1,0 +1,10 @@
+appdirs==1.4.3
+packaging==16.8
+h5py==2.7.0
+numpy==1.12.1
+pyparsing==2.2.0
+scikit-learn==0.18.1
+scipy==0.19.0
+six==1.10.0
+Keras==2.0.2
+tensorflow==1.1.0
