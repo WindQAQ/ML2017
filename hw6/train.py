@@ -4,13 +4,14 @@ import pandas as pd
 import keras.backend as K
 from keras.models import Model
 from keras.models import Sequential
+from keras.layers import add
 from keras.layers import Dot
 from keras.layers import Input
 from keras.layers import Dense
 from keras.layers import Reshape
 from keras.layers import Dropout
 from keras.layers import Embedding
-from keras.layers import Concatenate
+from keras.regularizers import l2
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
 
@@ -20,6 +21,7 @@ def parse_args():
     parser.add_argument('--train', required=True)
     parser.add_argument('--test', required=True)
     parser.add_argument('--dim', type=int, default=256)
+    parser.add_argument('--dnn', type=int, nargs='*')
 
     return parser.parse_args()
 
@@ -53,17 +55,22 @@ def rmse(y_true, y_pred):
 
 def build(num_users, num_movies, dim, dnn=None):
     u_input = Input(shape=(1,))
-    U = Embedding(num_users, dim)(u_input)
+    U = Embedding(num_users, dim, embeddings_regularizer=l2(0.00001))(u_input)
     U = Reshape((dim,))(U)
     U = Dropout(0.1)(U)
 
     m_input = Input(shape=(1,))
-    M = Embedding(num_movies, dim)(m_input)
+    M = Embedding(num_movies, dim, embeddings_regularizer=l2(0.00001))(m_input)
     M = Reshape((dim,))(M)
     M = Dropout(0.1)(M)
 
     if dnn is None:
-        pred = Dot(axes=-1)([U, M])    
+        pred = Dot(axes=-1)([U, M])
+        U_bias = Reshape((1,))(Embedding(num_users, 1)(u_input))
+        M_bias = Reshape((1,))(Embedding(num_users, 1)(m_input))
+
+        pred = add([pred, U_bias, M_bias])
+
     else:
         pred = Concatenate()([U, M])
         for units in dnn:
@@ -88,7 +95,7 @@ def main(args):
     num_users, num_movies = len(user2id), len(movie2id)
     dim = args.dim
     
-    model = build(num_users, num_movies, dim, dnn=[512, 256, 128])
+    model = build(num_users, num_movies, dim, dnn=args.dnn)
     model.summary()
 
     callbacks = []
