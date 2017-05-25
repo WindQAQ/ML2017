@@ -5,6 +5,5 @@ python3 predict.py --model best/model-5.h5 \
                    --train data/train_data.csv \
                    --tokenizer best/word_index \
                    --mlb best/label_mapping \
-                   --tfidf \
                    --test $1 \
                    --output $2
