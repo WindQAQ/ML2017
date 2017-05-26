@@ -8,6 +8,7 @@ from keras.layers import add
 from keras.layers import Dot
 from keras.layers import Input
 from keras.layers import Dense
+from keras.layers import Lambda
 from keras.layers import Reshape
 from keras.layers import Dropout
 from keras.layers import Embedding
@@ -66,10 +67,11 @@ def build(num_users, num_movies, dim, dnn=None):
 
     if dnn is None:
         pred = Dot(axes=-1)([U, M])
-        U_bias = Reshape((1,))(Embedding(num_users, 1)(u_input))
-        M_bias = Reshape((1,))(Embedding(num_users, 1)(m_input))
+        U_bias = Reshape((1,))(Embedding(num_users, 1, embeddings_regularizer=l2(0.00001))(u_input))
+        M_bias = Reshape((1,))(Embedding(num_users, 1, embeddings_regularizer=l2(0.00001))(m_input))
 
         pred = add([pred, U_bias, M_bias])
+        pred = Lambda(lambda x: x + K.constant(3.5817, dtype=K.floatx()))(pred)
 
     else:
         pred = Concatenate()([U, M])
@@ -99,7 +101,7 @@ def main(args):
     model.summary()
 
     callbacks = []
-    callbacks.append(EarlyStopping(monitor='val_loss', patience=10))
+    callbacks.append(EarlyStopping(monitor='val_rmse', patience=10))
     callbacks.append(ModelCheckpoint('model.h5', monitor='val_rmse', save_best_only=True))
 
     model.compile(loss='mse', optimizer='adam', metrics=[rmse])
