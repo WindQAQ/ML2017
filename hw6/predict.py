@@ -3,6 +3,35 @@ import numpy as np
 import pandas as pd
 import keras.backend as K
 from keras.models import load_model
+from keras.engine.topology import Layer
+
+
+class WeightedAvgOverTime(Layer):
+    def __init__(self, **kwargs):
+        self.supports_masking = True
+        super(WeightedAvgOverTime, self).__init__(**kwargs)
+   
+    def call(self, x, mask=None):
+        if mask is not None:
+            mask = K.cast(mask, K.floatx())
+            mask = K.expand_dims(mask, axis=-1)
+            s = K.sum(mask, axis=1)
+            if K.equal(s, K.zeros_like(s)) is None:
+                return K.mean(x, axis=1)
+            else:
+                return K.cast(K.sum(x * mask, axis=1) / K.sqrt(s), K.floatx())
+        else:
+            return K.mean(x, axis=1)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], input_shape[-1])
+
+    def compute_mask(self, x, mask=None):
+        return None
+
+    def get_config(self):
+        base_config = super(WeightedAvgOverTime, self).get_config()
+        return dict(list(base_config.items()))
 
 
 def parse_args():
@@ -42,7 +71,7 @@ def main(args):
     movie2id = np.load(args.movie2id)[()]
     X_test = read_data(args.test, user2id, movie2id)
 
-    model = load_model(args.model, custom_objects={'rmse': rmse})
+    model = load_model(args.model, custom_objects={'rmse': rmse, 'WeightedAvgOverTime': WeightedAvgOverTime})
     
     pred = model.predict([X_test[:, 0], X_test[:, 1]]).squeeze()
 

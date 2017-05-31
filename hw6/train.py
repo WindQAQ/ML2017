@@ -13,8 +13,11 @@ from keras.layers import Reshape
 from keras.layers import Dropout
 from keras.layers import Embedding
 from keras.regularizers import l2
+from keras.initializers import Zeros
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
+from keras.engine.topology import Layer
+from keras.preprocessing.sequence import pad_sequences
 
 
 def parse_args():
@@ -54,7 +57,35 @@ def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.pow(y_true - y_pred, 2)))
 
 
-def build(num_users, num_movies, dim, dnn=None):
+class WeightedAvgOverTime(Layer):
+    def __init__(self, **kwargs):
+        self.supports_masking = True
+        super(WeightedAvgOverTime, self).__init__(**kwargs)
+   
+    def call(self, x, mask=None):
+        if mask is not None:
+            mask = K.cast(mask, K.floatx())
+            mask = K.expand_dims(mask, axis=-1)
+            s = K.sum(mask, axis=1)
+            if K.equal(s, K.zeros_like(s)) is None:
+                return K.mean(x, axis=1)
+            else:
+                return K.cast(K.sum(x * mask, axis=1) / K.sqrt(s), K.floatx())
+        else:
+            return K.mean(x, axis=1)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], input_shape[-1])
+
+    def compute_mask(self, x, mask=None):
+        return None
+
+    def get_config(self):
+        base_config = super(WeightedAvgOverTime, self).get_config()
+        return dict(list(base_config.items()))
+
+
+def build(num_users, num_movies, dim, feedback, dnn=None):
     u_input = Input(shape=(1,))
     U = Embedding(num_users, dim, embeddings_regularizer=l2(0.00001))(u_input)
     U = Reshape((dim,))(U)
@@ -66,6 +97,12 @@ def build(num_users, num_movies, dim, dnn=None):
     M = Dropout(0.1)(M)
 
     if dnn is None:
+        F = Reshape((feedback.shape[1],))(Embedding(num_users, feedback.shape[1], trainable=False, weights=[feedback])(u_input))
+        F = Embedding(num_movies+1, dim, embeddings_initializer=Zeros(), embeddings_regularizer=l2(0.00001), mask_zero=True)(F)
+        F = WeightedAvgOverTime()(F)
+
+        U = add([U, F])
+
         pred = Dot(axes=-1)([U, M])
         U_bias = Reshape((1,))(Embedding(num_users, 1, embeddings_regularizer=l2(0.00001))(u_input))
         M_bias = Reshape((1,))(Embedding(num_users, 1, embeddings_regularizer=l2(0.00001))(m_input))
@@ -84,8 +121,21 @@ def build(num_users, num_movies, dim, dnn=None):
     return Model(inputs=[u_input, m_input], outputs=[pred])
 
 
+def get_feedback(X, num_users):
+    feedback = [[] for u in range(num_users)]
+
+    for u, m in zip(X[:, 0], X[:, 1]):
+        feedback[u].append(m+1)
+
+    return feedback
+
+
 def main(args):
     X_train, Y_train, user2id, movie2id = read_data(args.train, args.test)
+    num_users, num_movies = len(user2id), len(movie2id)
+
+    feedback = get_feedback(X_train, num_users)
+    feedback = pad_sequences(feedback)
 
     np.save('user2id', user2id)
     np.save('movie2id', movie2id)
@@ -94,10 +144,9 @@ def main(args):
     indices = np.random.permutation(len(X_train))
     X_train, Y_train = X_train[indices], Y_train[indices]
     
-    num_users, num_movies = len(user2id), len(movie2id)
     dim = args.dim
     
-    model = build(num_users, num_movies, dim, dnn=args.dnn)
+    model = build(num_users, num_movies, dim, feedback, dnn=args.dnn)
     model.summary()
 
     callbacks = []
@@ -105,7 +154,7 @@ def main(args):
     callbacks.append(ModelCheckpoint('model.h5', monitor='val_rmse', save_best_only=True))
 
     model.compile(loss='mse', optimizer='adam', metrics=[rmse])
-    model.fit([X_train[:, 0], X_train[:, 1]], Y_train, epochs=1000, batch_size=128, validation_split=0.1, callbacks=callbacks) 
+    model.fit([X_train[:, 0], X_train[:, 1]], Y_train, epochs=1000, batch_size=1024, validation_split=0.1, callbacks=callbacks) 
 
 
 if __name__ == '__main__':
