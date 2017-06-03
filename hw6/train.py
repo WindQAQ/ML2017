@@ -47,9 +47,9 @@ def read_data(trainfile, testfile):
     df['UserID'] = df['UserID'].apply(lambda x: user2id[x])
     df['MovieID'] = df['MovieID'].apply(lambda x: movie2id[x])
 
-    df = df.loc[df['test'] == 0]
+    df_train = df.loc[df['test'] == 0]
 
-    return df[['UserID', 'MovieID']].values, df['Rating'].values, user2id, movie2id
+    return df_train[['UserID', 'MovieID']].values, df_train['Rating'].values, df[['UserID', 'MovieID']].values, user2id, movie2id
 
 
 def rmse(y_true, y_pred):
@@ -85,7 +85,7 @@ class WeightedAvgOverTime(Layer):
         return dict(list(base_config.items()))
 
 
-def build(num_users, num_movies, dim, feedback, dnn=None):
+def build(num_users, num_movies, dim, feedback_u, feedback_m, dnn=None):
     u_input = Input(shape=(1,))
     U = Embedding(num_users, dim, embeddings_regularizer=l2(0.00001))(u_input)
     U = Reshape((dim,))(U)
@@ -97,12 +97,18 @@ def build(num_users, num_movies, dim, feedback, dnn=None):
     M = Dropout(0.1)(M)
 
     if dnn is None:
-        F = Reshape((feedback.shape[1],))(Embedding(num_users, feedback.shape[1], trainable=False, weights=[feedback])(u_input))
-        F = Embedding(num_movies+1, dim, embeddings_initializer=Zeros(), embeddings_regularizer=l2(0.00001), mask_zero=True)(F)
-        F = WeightedAvgOverTime()(F)
+        F_u = Reshape((feedback_u.shape[1],))(Embedding(num_users, feedback_u.shape[1], trainable=False, weights=[feedback_u])(u_input))
+        F_u = Embedding(num_movies+1, dim, embeddings_initializer=Zeros(), embeddings_regularizer=l2(0.00001), mask_zero=True)(F_u)
+        F_u = WeightedAvgOverTime()(F_u)
 
-        U = add([U, F])
+        U = add([U, F_u])
+        
+        F_m = Reshape((feedback_m.shape[1],))(Embedding(num_movies, feedback_m.shape[1], trainable=False, weights=[feedback_m])(m_input))
+        F_m = Embedding(num_users+1, dim, embeddings_initializer=Zeros(), embeddings_regularizer=l2(0.00001), mask_zero=True)(F_m)
+        F_m = WeightedAvgOverTime()(F_m)
 
+        M = add([M, F_m])
+        
         pred = Dot(axes=-1)([U, M])
         U_bias = Reshape((1,))(Embedding(num_users, 1, embeddings_regularizer=l2(0.00001))(u_input))
         M_bias = Reshape((1,))(Embedding(num_users, 1, embeddings_regularizer=l2(0.00001))(m_input))
@@ -121,21 +127,23 @@ def build(num_users, num_movies, dim, feedback, dnn=None):
     return Model(inputs=[u_input, m_input], outputs=[pred])
 
 
-def get_feedback(X, num_users):
-    feedback = [[] for u in range(num_users)]
+def get_feedback(X, num_users, num_movies):
+    feedback_u = [[] for u in range(num_users)]
+    feedback_m = [[] for i in range(num_movies)]
 
     for u, m in zip(X[:, 0], X[:, 1]):
-        feedback[u].append(m+1)
+        feedback_u[u].append(m+1)
+        feedback_m[m].append(u+1)
 
-    return feedback
+    return feedback_u, feedback_m
 
 
 def main(args):
-    X_train, Y_train, user2id, movie2id = read_data(args.train, args.test)
+    X_train, Y_train, X, user2id, movie2id = read_data(args.train, args.test)
     num_users, num_movies = len(user2id), len(movie2id)
 
-    feedback = get_feedback(X_train, num_users)
-    feedback = pad_sequences(feedback)
+    feedback_u, feedback_m = get_feedback(X, num_users, num_movies)
+    feedback_u, feedback_m = pad_sequences(feedback_u), pad_sequences(feedback_m)
 
     np.save('user2id', user2id)
     np.save('movie2id', movie2id)
@@ -146,11 +154,11 @@ def main(args):
     
     dim = args.dim
     
-    model = build(num_users, num_movies, dim, feedback, dnn=args.dnn)
+    model = build(num_users, num_movies, dim, feedback_u, feedback_m, dnn=args.dnn)
     model.summary()
 
     callbacks = []
-    callbacks.append(EarlyStopping(monitor='val_rmse', patience=10))
+    callbacks.append(EarlyStopping(monitor='val_rmse', patience=100))
     callbacks.append(ModelCheckpoint('model.h5', monitor='val_rmse', save_best_only=True))
 
     model.compile(loss='mse', optimizer='adam', metrics=[rmse])
