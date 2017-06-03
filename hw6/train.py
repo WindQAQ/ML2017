@@ -99,12 +99,14 @@ def build(num_users, num_movies, dim, feedback_u, feedback_m, dnn=None):
     if dnn is None:
         F_u = Reshape((feedback_u.shape[1],))(Embedding(num_users, feedback_u.shape[1], trainable=False, weights=[feedback_u])(u_input))
         F_u = Embedding(num_movies+1, dim, embeddings_initializer=Zeros(), embeddings_regularizer=l2(0.00001), mask_zero=True)(F_u)
+        F_u = Dropout(0.1)(F_u)
         F_u = WeightedAvgOverTime()(F_u)
 
         U = add([U, F_u])
         
         F_m = Reshape((feedback_m.shape[1],))(Embedding(num_movies, feedback_m.shape[1], trainable=False, weights=[feedback_m])(m_input))
         F_m = Embedding(num_users+1, dim, embeddings_initializer=Zeros(), embeddings_regularizer=l2(0.00001), mask_zero=True)(F_m)
+        F_m = Dropout(0.1)(F_m)
         F_m = WeightedAvgOverTime()(F_m)
 
         M = add([M, F_m])
