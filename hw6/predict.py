@@ -36,7 +36,7 @@ class WeightedAvgOverTime(Layer):
 
 def parse_args():
     parser = argparse.ArgumentParser('Matrix Factorization.')
-    parser.add_argument('--model', required=True)
+    parser.add_argument('--model', nargs='+', required=True)
     parser.add_argument('--test', required=True)
     parser.add_argument('--output', required=True)
     parser.add_argument('--user2id', required=True)
@@ -71,11 +71,15 @@ def main(args):
     movie2id = np.load(args.movie2id)[()]
     X_test = read_data(args.test, user2id, movie2id)
 
-    model = load_model(args.model, custom_objects={'rmse': rmse, 'WeightedAvgOverTime': WeightedAvgOverTime})
+    pred_en = []
+    for fmodel in args.model:
+        model = load_model(fmodel, custom_objects={'rmse': rmse, 'WeightedAvgOverTime': WeightedAvgOverTime})
+        pred = model.predict([X_test[:, 0], X_test[:, 1]]).squeeze()
+        pred = pred.clip(1.0, 5.0)
+        pred_en.append(pred)
     
-    pred = model.predict([X_test[:, 0], X_test[:, 1]]).squeeze()
+    pred = np.mean(pred_en, axis=0)
 
-    pred = pred.clip(1.0, 5.0)
     submit(args.output, pred)
      
 
