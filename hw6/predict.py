@@ -56,20 +56,18 @@ def read_data(filename, user2id, movie2id):
     df['UserID'] = df['UserID'].apply(lambda x: user2id[x])
     df['MovieID'] = df['MovieID'].apply(lambda x: movie2id[x])
 
-    df = df.drop(['TestDataID'], axis=1)
-
-    return df[['UserID', 'MovieID']].values
+    return df['TestDataID'], df[['UserID', 'MovieID']].values
 
 
-def submit(filename, pred):
-    df = pd.DataFrame({'TestDataID': list(range(1, len(pred)+1)), 'Rating': pred}, columns=('TestDataID', 'Rating'))
+def submit(filename, id, pred):
+    df = pd.DataFrame({'TestDataID': id, 'Rating': pred}, columns=('TestDataID', 'Rating'))
     df.to_csv(filename, index=False, columns=('TestDataID', 'Rating'))
 
 
 def main(args):
     user2id = np.load(args.user2id)[()]
     movie2id = np.load(args.movie2id)[()]
-    X_test = read_data(args.test, user2id, movie2id)
+    id, X_test = read_data(args.test, user2id, movie2id)
 
     pred_en = []
     for fmodel in args.model:
@@ -80,7 +78,7 @@ def main(args):
     
     pred = np.mean(pred_en, axis=0)
 
-    submit(args.output, pred)
+    submit(args.output, id, pred)
      
 
 if __name__ == '__main__':
